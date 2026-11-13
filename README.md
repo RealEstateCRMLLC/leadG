@@ -1,82 +1,53 @@
-# VoiceForge AI + Jules — Unified AI Voice Sales Platform
+# leadG — VoiceForge AI (Unified AI Voice Sales Platform)
 
-> **Merged project:** Combines VoiceForge AI (leadG) + Jules AI Real Estate Concierge (realestateleadcaller)
-> All unique features from both projects are preserved. See `MERGE_GUIDE.md` for integration points.
+AI voice sales platform for real estate lead generation: real-time conversational voice agents (Twilio + Vapi), omnichannel campaigns (voice/SMS/email/direct mail), a CRM with state-machine workflows, geospatial prospecting, and an MCP server for external AI agents. Built as part of the RealEstateCRM project family for Excel Legacy Realty Group.
 
-A comprehensive, enterprise-grade Next.js application that orchestrates real-time conversational AI voice agents for outbound and inbound lead generation, with full CRM, multi-channel campaigns, direct mail, and geospatial prospecting.
+## Status
 
-## Core Capabilities
+**Active development.** Version 2.0.0 per `CHANGELOG.md` (2026-09-22 merge release) — note `package.json` still says 1.0.0, which is stale. Last commit 2026-11-12 (missing Tailwind/PostCSS config fix). Recent work: in-browser "Talk to Riley" voice via the Vapi Web SDK (Oct 22), Twilio/SendGrid/Lob credential fallbacks (Oct 22), and removal of all mock data so provider failures and LLM date extraction surface honestly (Oct 21).
 
-### AI Voice Engine (from VoiceForge AI)
-1. **Intelligent Conversational Pipeline**
-   - Twilio SIP/PSTN telephony with inbound/outbound calling
-   - OpenAI GPT-4o cognitive engine with dynamic CRM payload injection
-   - Continuous learning `ReflectionEngine` that adapts objection handling from post-call transcripts
-   - ElevenLabs/Deepgram STT/TTS voice pipeline
+This repo merges two projects: **VoiceForge AI** (leadG, the voice engine) and **Jules AI Real Estate Concierge** (realestateleadcaller, the CRM/workflow side). See `MERGE_GUIDE.md` for the integration points.
 
-2. **Smart Omnichannel Campaigns**
-   - BullMQ + Redis for multi-day, multi-channel sequences
-   - Automatic fallback SMS (Twilio) or email (SendGrid) on voicemail/drop-off
-   - LeadRouter with A/B campaign queue mapping
+## What it does
 
-3. **Multi-Tenant SaaS**
-   - Organization-scoped data isolation
-   - Stripe integration for API minute usage billing
-   - Per-org API configuration
+### AI voice engine (from VoiceForge AI)
 
-### CRM & Concierge (from Jules AI)
-4. **State-Machine Workflows**
-   - Reactive state machines (not linear drips) based on lead intent/urgency
-   - "Default Aggressive" 10-Day Blitz + Double Tap strategies
-   - Visual drag-and-drop workflow builder (Inngest-backed)
+- Twilio SIP/PSTN telephony with inbound/outbound calling; OpenAI GPT-4o conversation engine
+- In-browser voice ("Talk to Riley") via the Vapi Web SDK
+- ElevenLabs/Deepgram STT/TTS voice pipeline; a ReflectionEngine that adapts objection handling from post-call transcripts
+- Native WebRTC warm transfers via `@twilio/voice-sdk` (floating dialer widget)
 
-5. **Direct Mail Automation**
-   - Lob direct mail dispatch via Inngest background jobs
-   - Track and manage physical mail tasks per lead
+### Campaigns & CRM (from Jules AI Concierge)
 
-6. **Knowledge Base Context Injection**
-   - Agent-written facts (lockbox codes, office hours) injected into voice AI prompts
-   - Dynamic per-call context enhancement
+- Omnichannel sequences (BullMQ + Redis): automatic SMS (Twilio) or email (SendGrid) fallback on voicemail/drop-off
+- Reactive state-machine workflows (not linear drips), including a "Default Aggressive" 10-Day Blitz; visual drag-and-drop workflow builder (Inngest-backed)
+- Direct mail automation via Lob (Inngest background jobs)
+- Knowledge-base context injection (agent-written facts into voice AI prompts); mid-call tool execution (Google Calendar + DB writes during calls via Vapi webhooks)
+- Bi-directional Follow Up Boss integration; sentiment analysis (OpenAI Structured Outputs) that bumps urgency, marks DNC, auto-pauses workflows
 
-7. **Mid-Call Tool Execution**
-   - Write to Google Calendar and database DURING active phone calls
-   - Vapi Server URL webhooks for real-time tool execution
+### Prospecting & platform
 
-8. **Bi-Directional CRM Integration**
-   - Follow Up Boss outbound push + inbound listener
-   - Auto-halts workflows when leads marked "Trash" or "Closed"
+- Geospatial prospecting: Nominatim geocoding, Circle Prospecting map (react-leaflet), geographic CSV export, SSE real-time map updates
+- Predictive ML lead scoring; dashboard KPIs (conversion, DNC, connect rate, appointments)
+- Multi-tenant data isolation (Prisma userId-scoped); Stripe billing for API minute usage
+- MCP server for external AI agents (Pages Router SSE transport — see `MERGE_GUIDE.md` for a critical constraint)
 
-9. **Sentiment & Intelligence**
-   - OpenAI Structured Outputs for inbound intent parsing
-   - Auto-bumps urgency scores, marks DNC, auto-pauses workflows
-   - Predictive ML lead scoring across historical pool
+## Stack
 
-10. **Geospatial Prospecting**
-    - Nominatim geocoding on lead creation and CSV import
-    - Circle Prospecting map (react-leaflet + haversine distance)
-    - SSE real-time map updates (new leads appear without refresh)
-    - Geographic CSV calling list export
+Next.js 14 (App Router) + React + Tailwind; TypeScript; Prisma + PostgreSQL (SQLite for dev); BullMQ + Redis; Inngest; Twilio (Voice, SMS, WebRTC); Vapi; OpenAI; ElevenLabs; Deepgram; Lob; Stripe; SendGrid; Jest tests. Docker Compose for Postgres + Redis.
 
-11. **Native Browser Calling**
-    - WebRTC warm transfers via `@twilio/voice-sdk`
-    - Floating NativeDialer widget in dashboard
+## What's working / what's not
 
-12. **MCP Server**
-    - Model Context Protocol for external AI agents
-    - Pages Router SSE transport (see MERGE_GUIDE for critical constraint)
+- The voice engine, campaigns, workflows, direct mail, and prospecting features are implemented across the codebase, per the v2.0.0 merge changelog and the Oct 2026 commits. The Oct 21 mock-data removal means missing API keys or provider failures now fail loudly instead of producing fake output.
+- No production deployment is documented in this repo — `DEPLOY.md` exists, but there is no live URL, uptime, or user evidence in the repo itself. The app is built by the main RealEstateCRM repo's CI (leadG job), which was green as of Nov 12, 2026 (RealEstateCRM v0.63.6). Locally it runs on port 3001.
+- Housekeeping issues: `package.json` version (1.0.0) disagrees with `CHANGELOG.md` (v2.0.0); a `.env.production.local` file is committed to the repo and should not be (production environment files do not belong in version control — verify no live secrets are exposed and remove it).
+- Live-service behavior (real calls, real mail, real billing) depends on API keys configured via `.env` — no evidence in the repo that the full chain has run end-to-end against live services.
 
-## Architecture
+## Relationship to RealEstateCRM
 
-* **Frontend:** Next.js (App Router), React, Tailwind CSS, Lucide Icons
-* **Backend:** Next.js Server Actions, API Routes, Inngest background jobs
-* **Database:** PostgreSQL (Prisma ORM) or SQLite (dev)
-* **Queuing:** Redis + BullMQ (omnichannel), Inngest (state machine)
-* **Telephony:** Twilio (Voice, SMS, WebRTC)
-* **AI:** OpenAI (conversation, sentiment, scoring), ElevenLabs (TTS)
-* **Direct Mail:** Lob
-* **Payments:** Stripe
+This is a satellite service of [RealEstateCRM](https://github.com/RealEstateCRMLLC/RealEstateCRM) — the AI voice-calling and campaign engine that complements the main CRM. It is a separate service, not part of the main CRM codebase. (Note: the Jules concierge code merged here came from the `realestateleadcaller` repo, which still exists separately — see that repo's README.)
 
-## Quick Start
+## Running it
 
 ```bash
 npm install
@@ -85,20 +56,19 @@ npx prisma db push
 npm run dev
 ```
 
-## Key Documentation
+Copy `.env.example` to `.env` and fill in API keys (Twilio, Vapi, OpenAI, DeepSeek, SendGrid, Lob, Stripe). See `DEPLOY.md` for deployment.
+
+## Documentation
 
 | File | Purpose |
 |---|---|
-| `MERGE_GUIDE.md` | **Integration points between merged projects** |
+| `MERGE_GUIDE.md` | Integration points between the merged projects |
 | `VISION.md` | Product vision and design principles |
 | `ROADMAP.md` | Development phases and milestones |
 | `CHANGELOG.md` | Version history |
 | `DEPLOY.md` | Deployment strategies |
 
-## Historical Projects
+## Links
 
-This repository merges two independently developed projects:
-- **VoiceForge AI** (leadG) — Autonomous AI voice lead generation & sales engine
-- **Jules AI Real Estate Concierge** (realestateleadcaller) — Agentic lead conversion workflow
-
-All unique features, ideas, and planned capabilities from both are preserved in this unified codebase.
+- Main CRM: https://github.com/RealEstateCRMLLC/RealEstateCRM
+- Org: https://github.com/RealEstateCRMLLC
