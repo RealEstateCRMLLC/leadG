@@ -25,9 +25,9 @@
   --success: #10b981;
   --info: #3b82f6;
 
-  --font-display: 'Syne', sans-serif;
-  --font-mono: 'DM Mono', monospace;
-  --font-body: 'Syne', sans-serif;
+  --font-display: var(--font-syne), 'Syne', sans-serif;
+  --font-mono: var(--font-dm-mono), 'DM Mono', monospace;
+  --font-body: var(--font-syne), 'Syne', sans-serif;
 }
 
 * {

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiUrl } from '@/lib/api-base';
 
 import { Lead, LeadActivity, FollowUpWorkflow, LeadScore } from '@prisma/client';
 
@@ -12,13 +13,16 @@ type LeadProfileData = Lead & {
   scores: LeadScore[];
 };
 
-export default function LeadProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
+export default function LeadProfilePage({ params }: { params: { id: string } }) {
+  // Next 14 passes params as a plain object (the Promise form arrived
+  // in Next 15). Calling React use() on it threw React error #438 and
+  // crashed this page on every lead.
+  const resolvedParams = params;
   const [lead, setLead] = useState<LeadProfileData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/leads/${resolvedParams.id}`)
+    fetch(apiUrl(`/api/leads/${resolvedParams.id}`))
       .then(res => res.json())
       .then(data => {
         setLead(data);
@@ -40,7 +44,7 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
         payload = {};
       }
 
-      const res = await fetch(endpoint, {
+      const res = await fetch(apiUrl(endpoint), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -52,7 +56,7 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
       alert(result.message || (action === 'direct_mail' ? 'Direct mail task created successfully' : 'Action triggered successfully'));
 
       // Refresh lead data
-      const updatedRes = await fetch(`/api/leads/${resolvedParams.id}`);
+      const updatedRes = await fetch(apiUrl(`/api/leads/${resolvedParams.id}`));
       const updatedData = await updatedRes.json();
       setLead(updatedData);
     } catch (e: any) {

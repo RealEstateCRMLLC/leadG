@@ -61,7 +61,7 @@ export default function KnowledgeBasePage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this snippet?')) return;
     try {
-      const res = await fetch(`/api/settings/knowledge/${id}`, { method: 'DELETE' });
+      const res = await fetch(apiUrl(`/api/settings/knowledge/${id}`), { method: 'DELETE' });
       if (res.ok) {
         setSnippets(snippets.filter(s => s.id !== id));
       }
